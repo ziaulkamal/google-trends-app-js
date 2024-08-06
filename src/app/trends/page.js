@@ -16,7 +16,7 @@ export default function TrendsPage() {
         }
         const data = await response.json();
         setQueries(data);
-        await postQueries(data); // Kirim data setelah diambil
+        await getQueries(data); // Kirim data dengan GET setelah diambil
       } catch (error) {
         setError(error.message);
       } finally {
@@ -24,33 +24,31 @@ export default function TrendsPage() {
       }
     }
 
-    async function postQueries(data) {
-      const domain = window.location.origin;
+    async function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
-      const postRequests = data.map(async (query) => {
+    async function getQueries(data) {
+      const domain = window.location.origin;
+      const searchApiUrl = process.env.NEXT_PUBLIC_SEARCH_API_URL; // Ambil URL dari environment variable
+
+      const getRequests = data.map(async (query) => {
         try {
-          const response = await fetch('http://autocreatecontent.test/api/job', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              keyword: query,
-              url: domain,
-              status: false,
-            }),
+          await sleep(3000);
+          const response = await fetch(`${searchApiUrl}?query=${encodeURIComponent(query)}`, {
+            method: 'GET',
           });
 
           if (!response.ok) {
-            throw new Error(`Failed to send data for query "${query}": ${response.statusText}`);
+            throw new Error(`Failed to fetch data for query "${query}": ${response.statusText}`);
           }
         } catch (error) {
-          console.error(`Error sending query "${query}": ${error.message}`);
+          console.error(`Error fetching query "${query}": ${error.message}`);
         }
       });
 
-      // Tunggu semua POST requests selesai
-      await Promise.all(postRequests);
+      // Tunggu semua GET requests selesai
+      await Promise.all(getRequests);
     }
 
     fetchQueries();
